@@ -8,10 +8,21 @@ import numpy as np
 import re
 import datetime
 
+import requests
+
 def autoColetaVita():
 
     '''Vinicius Conti Sardinha
         CPF: 509.514.378-01'''
+
+    versao_atual = 0.2
+
+    response = requests.get("https://api.github.com/repos/VitaAssessement/AutoAssessement/releases/latest")
+    versao_recente = float(response.json()["name"])
+
+    if versao_atual < versao_recente:
+        print('-----------------------------------------------------------------------------------------\nfavor atualizar script em https://github.com/VitaAssessement/AutoAssessement.git\n-----------------------------------------------------------------------------------------')
+        return
 
     class dataFrames:
         def __init__(self,
