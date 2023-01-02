@@ -15,7 +15,7 @@ def autoColetaVita():
     '''Vinicius Conti Sardinha
         Vivo Vita IT'''
 
-    versao_atual = 0.2
+    versao_atual = 0.21
 
     response = requests.get(
         "https://api.github.com/repos/VitaAssessement/AutoAssessement/releases/latest")
@@ -215,11 +215,11 @@ def autoColetaVita():
                             {'ip': [array_ips[cont][0]], 'falha':['recusado - SSH']}, index=None)], ignore_index=True)
                     continue
 
-                '''except Exception as err:
+                except Exception as err:
                     exception_type = type(err)
                     print('------ERRO 3------')
                     print(exception_type)
-                    print('------------------')'''
+                    print('------------------')
 
                 device.close()
 
@@ -404,6 +404,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO relacaoLogin------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
 
@@ -428,6 +430,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_show_version.__contains__('% Ambiguous command') or prompt_show_version.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO showVersion------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     show_version = prompt_show_version.split('\n')
@@ -467,6 +471,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO showVersion------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -482,6 +488,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_swtCDP.__contains__('% Ambiguous command') or prompt_swtCDP.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO swtCDP------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     swtCDPNeighbors = prompt_swtCDP.split('(Device ID)')
@@ -546,6 +554,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO swtCDP------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -563,6 +573,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_vtp.__contains__('% Ambiguous command') or prompt_vtp.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO VTP------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     # print(prompt_vtp)
@@ -592,6 +604,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO VTP------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -607,6 +621,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_show_inventory.__contains__('% Ambiguous command') or prompt_show_inventory.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO showInventory------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     # print(prompt_show_inventory)
@@ -651,6 +667,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO showInventory------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -665,6 +683,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_swtInterfaces.__contains__('% Ambiguous command') or prompt_swtInterfaces.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO swtInterfaces------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     if (prompt_swtInterfaces == ''):
@@ -709,6 +729,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO swtInterfaces------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -723,6 +745,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_interfaceBrief.__contains__('% Ambiguous command') or prompt_interfaceBrief.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO interfaceBrief------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     # print('prompt_interfaceBrief')
@@ -761,6 +785,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO interfaceBrief------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -781,6 +807,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                         if (prompt_vlans.__contains__('% Ambiguous command') or prompt_vlans.__contains__('% Invalid input detected at \'^\' marker')):
                             print('------ERRO VLAN------')
                             print('Comando Invalido')
+                            print(array_ips[cont][0])
+                            print(device['transport'])
                             print('------------------')
                             break
                     if (prompt_vlans.__contains__('No Virtual LANs configured.')):
@@ -835,6 +863,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO vlan------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -849,6 +879,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                     if (prompt_ipARP.__contains__('% Ambiguous command') or prompt_ipARP.__contains__('% Invalid input detected at \'^\' marker')):
                         print('------ERRO ipARP------')
                         print('Comando Invalido')
+                        print(array_ips[cont][0])
+                        print(device['transport'])
                         print('------------------')
                         break
                     # print(prompt_ipARP)
@@ -882,6 +914,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO ipARP------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -901,6 +935,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                         if (prompt_macAddr.__contains__('% Ambiguous command') or prompt_macAddr.__contains__('% Invalid input detected at \'^\' marker')):
                             print('------ERRO MacAddr------')
                             print('Comando Invalido')
+                            print(array_ips[cont][0])
+                            print(device['transport'])
                             print('------------------')
                             break
                     # print(prompt_macAddr)
@@ -958,6 +994,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO MacAddr------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -975,6 +1013,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                         if (prompt_macCount.__contains__('% Ambiguous command') or prompt_macCount.__contains__('% Invalid input detected at \'^\' marker')):
                             print('------ERRO MacCount------')
                             print('Comando Invalido')
+                            print(array_ips[cont][0])
+                            print(device['transport'])
                             print('------------------')
                             break
                     if not any(letra_macCount.isalpha() for letra_macCount in prompt_macCount):
@@ -1014,6 +1054,8 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 except Exception as err:
                     print('------ERRO MacCount------')
                     print(err)
+                    print(array_ips[cont][0])
+                    print(device['transport'])
                     print('------------------')
                     break
     #################################################################################################################################
@@ -1056,11 +1098,11 @@ def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, a
                 loopLogin = True
             continue
 
-        '''except Exception as err:
+        except Exception as err:
                             exception_type = type(err)
                             print('------ERRO 5------')
                             print(exception_type)
-                            print('------------------')'''
+                            print('------------------')
     return coletaDF, reportDF
 
 
