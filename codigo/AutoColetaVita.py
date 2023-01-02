@@ -13,7 +13,7 @@ import requests
 def autoColetaVita():
 
     '''Vinicius Conti Sardinha
-        CPF: 509.514.378-01'''
+        Vivo Vita IT'''
 
     versao_atual = 0.2
 
