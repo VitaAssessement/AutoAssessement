@@ -1,0 +1,35 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+openpyxl = "*"
+netmiko = "*"
+napalm = "*"
+pandas = "*"
+pysimplegui = "*"
+datetime = "*"
+netutils = "*"
+paramiko = "*"
+setuptools = "*"
+cffi = "*"
+future = "*"
+textfsm = "*"
+jinja2 = "*"
+netaddr = "*"
+pyyaml = "*"
+pyeapi = "*"
+junos-eznc = "*"
+scp = "*"
+lxml = "*"
+ncclient = "*"
+ttp = "*"
+ttp-templates = "*"
+typing-extensions = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
