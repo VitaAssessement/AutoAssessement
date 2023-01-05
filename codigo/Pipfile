@@ -28,6 +28,7 @@ ncclient = "*"
 ttp = "*"
 ttp-templates = "*"
 typing-extensions = "*"
+alive-progress = "*"
 
 [dev-packages]
 
