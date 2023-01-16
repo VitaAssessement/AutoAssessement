@@ -148,11 +148,11 @@ def autoColeta():
         else:
             array_comandos = None
         xl.close()
-    except TimeoutError:
-        print('blabla')
-    '''except Exception:
+    except UnboundLocalError:
+        print('')
+    except Exception:
         print(f'{bcolors.BOLD}operação cancelada{bcolors.ENDC}')
-        return'''
+        return
 
 #################################################################################################################################
     try:
@@ -208,6 +208,8 @@ elapsed_end=f'{bcolors.OKGREEN} execução finalizada em '+'{elapsed}'+f'{bcolor
 
         return
 
+    except AttributeError:
+        print('')
     except Exception as err:
         exception_type = type(err).__name__
         print(f'{bcolors.WARNING}------ERRO 6------')

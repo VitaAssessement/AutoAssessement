@@ -106,12 +106,12 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 loopLogin = True
             continue
 
-        except TimeoutError:
-            print('blabla')
+        #except UnboundLocalError:
+        #    print('')
 
-        '''except Exception as err:
+        except Exception as err:
                             exception_type = type(err)
                             print(f'{bcolors.WARNING}------ERRO 5------')
                             print(exception_type)
-                            print(f'------------------{bcolors.ENDC}')'''
+                            print(f'------------------{bcolors.ENDC}')
     return coletaDF, reportDF

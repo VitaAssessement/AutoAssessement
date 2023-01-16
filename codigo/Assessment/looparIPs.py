@@ -65,13 +65,16 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
                         loopLogin = True
                         continue
                     
-                    '''except Exception as err:
+                    except UnboundLocalError:
+                        print('')
+
+                    except Exception as err:
                         exception_type = type(err)
                         print(f'{bcolors.WARNING}------ERRO 3------')
                         print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')'''
+                        print(f'------------------{bcolors.ENDC}')
 
-            device.close()
+                    device.close()
 
             loopLogin = False
             cont2 = 0
@@ -134,11 +137,11 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
                 os.remove(pastaLogs+'/'+ip[0]+'_TELNET'+'.txt')
             bar()
 
-    except TimeoutError:
-        print('blabla')
+    except UnboundLocalError:
+        print('')
 
-    '''except Exception as err:
+    except Exception as err:
                         exception_type = type(err).__name__
                         print(f'{bcolors.WARNING}------ERRO 10------')
                         print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')'''
+                        print(f'------------------{bcolors.ENDC}')
