@@ -1,0 +1,3 @@
+import autoColetaVita
+
+autoColetaVita.autoColeta()

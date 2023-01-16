@@ -2,4 +2,6 @@ cd C:\Users\vsardinha\Documents\GitHub\AutoAssessment\codigo
 
 pipenv shell
 
-pipenv run pyinstaller --onefile --copy-metadata netutils --collect-data netutils --collect-data=napalm --collect-data grapheme AutoAssessmentVita.py
+pipenv run python Assessment/main.py
+
+pipenv run pyinstaller --onefile --copy-metadata netutils --collect-data netutils --collect-data=napalm --collect-data grapheme Assessment/main.py
