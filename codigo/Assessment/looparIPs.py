@@ -5,7 +5,7 @@ import os
 import napalm.base.exceptions
 import napalm
 import netmiko
-import rodarColeta
+from rodarColeta import rodarColeta
 
 def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF):
     try:
@@ -69,9 +69,9 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
                         exception_type = type(err)
                         print(f'{bcolors.WARNING}------ERRO 3------')
                         print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')
-'''
-                    device.close()
+                        print(f'------------------{bcolors.ENDC}')'''
+
+            device.close()
 
             loopLogin = False
             cont2 = 0
@@ -122,11 +122,11 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
                         loopLogin = True
                         break
 
-                    '''except Exception as err:
+                    except Exception as err:
                         exception_type = type(err).__name__
                         print(f'{bcolors.WARNING}------ERRO 2------')
                         print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')'''
+                        print(f'------------------{bcolors.ENDC}')
 
             if os.path.getsize(pastaLogs+'/'+ip[0]+'_SSH'+'.txt') == 0:
                 os.remove(pastaLogs+'/'+ip[0]+'_SSH'+'.txt')
@@ -136,8 +136,9 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
 
     except TimeoutError:
         print('blabla')
+
     '''except Exception as err:
                         exception_type = type(err).__name__
-                        print(f'{bcolors.WARNING}------ERRO 2------')
+                        print(f'{bcolors.WARNING}------ERRO 10------')
                         print(exception_type)
                         print(f'------------------{bcolors.ENDC}')'''

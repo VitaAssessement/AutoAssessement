@@ -5,9 +5,9 @@ import PySimpleGUI as sg
 import requests
 from alive_progress import alive_bar
 from multiprocessing.pool import ThreadPool as Pool
-import selecSheet
-import looparIPs
-import escribaExcel
+from selecSheet import selecSheet
+from looparIPs import looparIPs
+from escribaExcel import escribaExcel
 
 pool_size = 5 #quantidade de processamentos simultaneos no multithread
 
@@ -148,9 +148,11 @@ def autoColeta():
         else:
             array_comandos = None
         xl.close()
-    except Exception:
+    except TimeoutError:
+        print('blabla')
+    '''except Exception:
         print(f'{bcolors.BOLD}operação cancelada{bcolors.ENDC}')
-        return
+        return'''
 
 #################################################################################################################################
     try:

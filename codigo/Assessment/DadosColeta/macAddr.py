@@ -6,8 +6,7 @@ from cores import bcolors
 
 def macAddr(device, ip, reportDF, dispositivo, coletaDF):
 
-    if contError < 3:
-        contError = 0
+    contError = 0
     contRela = 0
     while contRela == 0 and contError < 3:
         try:
