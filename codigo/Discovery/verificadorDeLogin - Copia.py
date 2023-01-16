@@ -11,9 +11,6 @@ import pandas as pd
 import PySimpleGUI as sg
 import requests
 from alive_progress import alive_bar
-from multiprocessing.pool import ThreadPool as Pool
-
-pool_size = 5 #quantidade de processamentos simultaneos no multithread
 
 class bcolors:
     HEADER = '\033[95m'
@@ -187,14 +184,132 @@ def autoColetaVita():
     with alive_bar(len(array_ips)*2, force_tty=True,title=f'{bcolors.HEADER}{bcolors.BOLD}Assessment{bcolors.ENDC}',
 elapsed=' em {elapsed}',enrich_print=False,dual_line=True,
 elapsed_end=f'{bcolors.OKGREEN} execução finalizada em '+'{elapsed}'+f'{bcolors.ENDC}') as bar:
-        
-        pool = Pool(pool_size)
+        for cont in range(len(array_ips)):
 
-        for ip in array_ips:
-            pool.apply_async(looparIPs, (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF))
-            #looparIPs(ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF)
-        pool.close()
-        pool.join()
+            reportDF = reports()
+
+            loopLogin = False
+            cont2 = 0
+            bar.text(f'{bcolors.OKBLUE}conectando via {bcolors.HEADER}SSH{bcolors.OKBLUE} a: {bcolors.ENDC}'+array_ips[cont][0])
+            for cont2 in range(len(array_login)):
+                if (loopLogin):
+                    loopLogin = False
+                    break
+                else:
+                    tempo_init = datetime.datetime.now()
+                    driver = napalm.get_network_driver(array_ips[cont][1])
+                    device = driver(hostname=array_ips[cont][0],
+                                    username=array_login[cont2][0],
+                                    password=array_login[cont2][1],
+                                    timeout=120,
+                                    optional_args={'transport': 'ssh',
+                                                "session_log": pastaLogs+'/'+array_ips[cont][0]+'_SSH'+'.txt',
+                                                'force_no_enable': 'True'})
+
+                    try:
+                        device.open()
+                        coletaDF, reportDF = rodarColeta(tempo_init=tempo_init, cont=cont, cont2=cont2, array_ips=array_ips, array_login=array_login,
+                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF)
+                        break
+                    except (netmiko.NetMikoTimeoutException, napalm.base.exceptions.ConnectionException):
+                        print(f'{bcolors.FAIL}falha na conexão via SSH com IP: {bcolors.ENDC}' + array_ips[cont][0])
+                        coletaDF.dfSemConexao = pd.concat([coletaDF.dfSemConexao, pd.DataFrame(
+                            {'ip': [array_ips[cont][0]], 'modo': ['SSH']}, index=None)], ignore_index=True)
+                        loopLogin = True
+                        continue
+
+                    except (netmiko.NetMikoAuthenticationException, netmiko.ReadException):
+                        if (cont2 == len(array_login)-1):
+                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
+                                array_ips[cont][0])
+                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
+                                {'ip': [array_ips[cont][0]], 'falha':['login']}, index=None)], ignore_index=True)
+                        continue
+
+                    except ConnectionRefusedError:
+                        if (cont2 == len(array_login)-1):
+                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
+                                array_ips[cont][0])
+                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
+                                {'ip': [array_ips[cont][0]], 'falha':['recusado - SSH']}, index=None)], ignore_index=True)
+                        continue
+
+                    except TimeoutError:
+                        print(f'{bcolors.FAIL}falha na conexão via SSH com IP: {bcolors.ENDC}' + array_ips[cont][0])
+                        coletaDF.dfSemConexao = pd.concat([coletaDF.dfSemConexao, pd.DataFrame(
+                            {'ip': [array_ips[cont][0]], 'modo': ['SSH']}, index=None)], ignore_index=True)
+                        loopLogin = True
+                        continue
+                    
+                    except Exception as err:
+                        exception_type = type(err)
+                        print(f'{bcolors.WARNING}------ERRO 3------')
+                        print(exception_type)
+                        print(f'------------------{bcolors.ENDC}')
+
+                    device.close()
+
+            loopLogin = False
+            cont2 = 0
+            bar()
+            bar.text(f'{bcolors.OKBLUE}conectando via {bcolors.HEADER}TELNET{bcolors.OKBLUE} a: {bcolors.ENDC}'+array_ips[cont][0])
+            for cont2 in range(len(array_login)):
+                if (loopLogin):
+                    loopLogin = False
+                    break
+                else:
+                    tempo_init = datetime.datetime.now()
+                    device = driver(hostname=array_ips[cont][0],
+                                    username=array_login[cont2][0],
+                                    password=array_login[cont2][1],
+                                    timeout=120,
+                                    optional_args={'transport': 'telnet',
+                                                "session_log": pastaLogs+'/'+array_ips[cont][0]+'_TELNET'+'.txt',
+                                                'force_no_enable': 'True'})
+                    try:
+                        device.open()
+                        coletaDF, reportDF = rodarColeta(tempo_init=tempo_init, cont=cont, cont2=cont2, array_ips=array_ips, array_login=array_login,
+                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF)
+                        break
+                    except netmiko.NetmikoAuthenticationException:
+                        if (cont2 == len(array_login)-1):
+                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
+                                array_ips[cont][0])
+                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
+                                {'ip': [array_ips[cont][0]], 'falha':['login']}, index=None)], ignore_index=True)
+                        continue
+
+                    except ConnectionRefusedError:
+                        if (cont2 == len(array_login)-1):
+                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
+                                array_ips[cont][0])
+                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
+                                {'ip': [array_ips[cont][0]], 'falha':['recusado - TELNET']}, index=None)], ignore_index=True)
+                        continue
+
+                    except (netmiko.NetMikoTimeoutException, netmiko.ReadTimeout, napalm.base.exceptions.ConnectionException):
+                        loopLogin = True
+                        break
+
+                    except TimeoutError:
+                        print(f'{bcolors.FAIL}falha na conexão via TELNET com IP: {bcolors.ENDC}' + array_ips[cont][0])
+                        coletaDF.dfSemConexao = pd.concat([coletaDF.dfSemConexao, pd.DataFrame(
+                            {'ip': [array_ips[cont][0]],'modo':['TELNET']}, index=None)], ignore_index=True)
+                        loopLogin = True
+                        break
+
+                    except Exception as err:
+                        exception_type = type(err).__name__
+                        print(f'{bcolors.WARNING}------ERRO 2------')
+                        print(exception_type)
+                        print(f'------------------{bcolors.ENDC}')
+
+            if os.path.getsize(pastaLogs+'/'+array_ips[cont][0]+'_SSH'+'.txt') == 0:
+                os.remove(pastaLogs+'/'+array_ips[cont][0]+'_SSH'+'.txt')
+            if os.path.getsize(pastaLogs+'/'+array_ips[cont][0]+'_TELNET'+'.txt') == 0:
+                os.remove(pastaLogs+'/'+array_ips[cont][0]+'_TELNET'+'.txt')
+            bar()
+
 #################################################################################################################################
 
     try:
@@ -259,7 +374,7 @@ def escribaExcel(writer, sheetName, df):
         writer.sheets[sheetName].set_column(col_idx, col_idx, column_width+2)
 
 
-def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos, modo_config, device, reportDF, coletaDF):
+def rodarColeta(tempo_init, cont, cont2, array_ips, array_login, array_secret, array_comandos, modo_config, device, reportDF, coletaDF):
     if (len(array_secret)) > 1:
         range_secret = len(array_secret)
     else:
@@ -280,7 +395,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
             while contRela == 0 and contError < 3:
                 try:
                     #device._netmiko_device.send_command("terminal history")
-                    reportDF.report_relacaoLogin['ip'] = [ip[0]]
+                    reportDF.report_relacaoLogin['ip'] = [array_ips[cont][0]]
                     reportDF.report_relacaoLogin['username'] = [
                         array_login[cont2][0]]
                     reportDF.report_relacaoLogin['password'] = [
@@ -318,7 +433,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO relacaoLogin------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -333,7 +448,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
 
                     reportDF.report_showVersion['Hostname'] = [
                         dispositivo['hostname']]
-                    reportDF.report_showVersion['ip'] = [ip[0]]
+                    reportDF.report_showVersion['ip'] = [array_ips[cont][0]]
                     reportDF.report_showVersion['modelo'] = [
                         dispositivo['model']]
                     reportDF.report_showVersion['serial'] = [
@@ -344,7 +459,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                     if (prompt_show_version.__contains__('% Ambiguous command') or prompt_show_version.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO showVersion------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -385,7 +500,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO showVersion------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -402,7 +517,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                     if (prompt_swtCDP.__contains__('% Ambiguous command') or prompt_swtCDP.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO swtCDP------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -413,7 +528,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                         for sCDP in swtCDP1:
                             reportDF.report_swtCDP['Hostname'] = [
                                 dispositivo['hostname']]
-                            reportDF.report_swtCDP['ip'] = [ip[0]]
+                            reportDF.report_swtCDP['ip'] = [array_ips[cont][0]]
                             if sCDP.__contains__('Device ID'):
                                 cdpNeighbor = sCDP.replace('Device ID', '')
                                 cdpNeighbor = cdpNeighbor.replace(':', '')
@@ -468,7 +583,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.ENDC}------ERRO swtCDP------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -480,14 +595,14 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
             while contRela == 0 and contError < 3:
                 try:
                     reportDF.report_vtp['Hostname'] = [dispositivo['hostname']]
-                    reportDF.report_vtp['ip'] = [ip[0]]
+                    reportDF.report_vtp['ip'] = [array_ips[cont][0]]
 
                     prompt_vtp = device._netmiko_device.send_command(
                         'show vtp status', read_timeout=30)
                     if (prompt_vtp.__contains__('% Ambiguous command') or prompt_vtp.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO VTP------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -518,7 +633,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO VTP------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -535,7 +650,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                     if (prompt_show_inventory.__contains__('% Ambiguous command') or prompt_show_inventory.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO showInventory------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -551,7 +666,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                             reportDF.report_showInventory['Hostname'] = [
                                 dispositivo['hostname']]
                             reportDF.report_showInventory['ip'] = [
-                                ip[0]]
+                                array_ips[cont][0]]
                             if sInv.__contains__('NAME'):
                                 sInvNameDesc = sInv.split('\"')
                                 # print(sInvNameDesc[1])
@@ -581,7 +696,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO showInventory------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -597,7 +712,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                     if (prompt_swtInterfaces.__contains__('% Ambiguous command') or prompt_swtInterfaces.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO swtInterfaces------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -605,7 +720,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                         reportDF.report_swtInterfaces['Hostname'] = [
                             dispositivo['hostname']]
                         reportDF.report_swtInterfaces['ip'] = [
-                            ip[0]]
+                            array_ips[cont][0]]
                         break
                     swtInterfacesLines = prompt_swtInterfaces.split('\n')
                     if swtInterfacesLines[0] == '':
@@ -615,7 +730,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                             reportDF.report_swtInterfaces['Hostname'] = [
                                 dispositivo['hostname']]
                             reportDF.report_swtInterfaces['ip'] = [
-                                ip[0]]
+                                array_ips[cont][0]]
                             reportDF.report_swtInterfaces['Port'] = [swtInterface[swtInterfacesLines[0].index(
                                 'Port'):swtInterfacesLines[0].index('Name')-1].strip()]
                             reportDF.report_swtInterfaces['Name'] = [swtInterface[swtInterfacesLines[0].index(
@@ -643,7 +758,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO swtInterfaces------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -659,7 +774,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                     if (prompt_interfaceBrief.__contains__('% Ambiguous command') or prompt_interfaceBrief.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO interfaceBrief------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -673,7 +788,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                             reportDF.report_interfaceBrief['Hostname'] = [
                                 dispositivo['hostname']]
                             reportDF.report_interfaceBrief['ip'] = [
-                                ip[0]]
+                                array_ips[cont][0]]
                             reportDF.report_interfaceBrief['Interface'] = [interfaceBriefs[interfaceBriefLines[0].index(
                                 'Interface'):interfaceBriefLines[0].index('IP-Address')-1].strip()]
                             reportDF.report_interfaceBrief['IP-Address'] = [interfaceBriefs[interfaceBriefLines[0].index(
@@ -699,7 +814,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO interfaceBrief------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -711,7 +826,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
             while contRela == 0 and contError < 3:
                 try:
                     #report_['Hostname'] = [dispositivo['hostname']]
-                    #report_['ip'] = [ip[0]]
+                    #report_['ip'] = [array_ips[cont][0]]
 
                     prompt_vlans = device._netmiko_device.send_command(
                         'show vlan', read_timeout=30)
@@ -721,14 +836,14 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                         if (prompt_vlans.__contains__('% Ambiguous command') or prompt_vlans.__contains__('% Invalid input detected at \'^\' marker')):
                             print(f'{bcolors.WARNING}------ERRO VLAN------')
                             print('Comando Invalido')
-                            print(ip[0])
+                            print(array_ips[cont][0])
                             print(device['transport'])
                             print(f'------------------{bcolors.ENDC}')
                             break
                     if (prompt_vlans.__contains__('No Virtual LANs configured.')):
                         reportDF.report_vlan['Hostname'] = [
                             dispositivo['hostname']]
-                        reportDF.report_vlan['ip'] = [ip[0]]
+                        reportDF.report_vlan['ip'] = [array_ips[cont][0]]
                         reportDF.report_vlan['Vlan ID'] = [
                             'No Virtual LANs configured.']
                         coletaDF.dfVlan = pd.concat(
@@ -761,7 +876,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                                 'Ports'):len(vlans)].strip()
                             reportDF.report_vlan['Hostname'] = [
                                 dispositivo['hostname']]
-                            reportDF.report_vlan['ip'] = [ip[0]]
+                            reportDF.report_vlan['ip'] = [array_ips[cont][0]]
                             reportDF.report_vlan['Vlan ID'] = [vlanN]
                             reportDF.report_vlan['Vlan Name'] = [vlanName]
                             reportDF.report_vlan['Status'] = [vlanStatus]
@@ -777,7 +892,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO vlan------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -793,7 +908,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                     if (prompt_ipARP.__contains__('% Ambiguous command') or prompt_ipARP.__contains__('% Invalid input detected at \'^\' marker')):
                         print(f'{bcolors.WARNING}------ERRO ipARP------')
                         print('Comando Invalido')
-                        print(ip[0])
+                        print(array_ips[cont][0])
                         print(device['transport'])
                         print(f'------------------{bcolors.ENDC}')
                         break
@@ -804,7 +919,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                         if not ipARPs.__contains__('Protocol'):
                             reportDF.report_ipARP['Hostname'] = [
                                 dispositivo['hostname']]
-                            reportDF.report_ipARP['ip'] = [ip[0]]
+                            reportDF.report_ipARP['ip'] = [array_ips[cont][0]]
                             reportDF.report_ipARP['Protocol'] = [ipARPs[ipARPLines[0].index(
                                 'Protocol'):ipARPLines[0].index('Address')-1].strip()]
                             reportDF.report_ipARP['Address'] = [
@@ -828,7 +943,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO ipARP------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -840,7 +955,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
             while contRela == 0 and contError < 3:
                 try:
                     #report_['Hostname'] = [dispositivo['hostname']]
-                    #report_['ip'] = [ip[0]]
+                    #report_['ip'] = [array_ips[cont][0]]
                     prompt_macAddr = device._netmiko_device.send_command(
                         'show mac address-table', read_timeout=30)
                     if (prompt_macAddr.__contains__('% Ambiguous command') or prompt_macAddr.__contains__('% Invalid input detected at \'^\' marker')):
@@ -849,7 +964,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                         if (prompt_macAddr.__contains__('% Ambiguous command') or prompt_macAddr.__contains__('% Invalid input detected at \'^\' marker')):
                             print(f'{bcolors.WARNING}------ERRO MacAddr------')
                             print('Comando Invalido')
-                            print(ip[0])
+                            print(array_ips[cont][0])
                             print(device['transport'])
                             print(f'------------------{bcolors.ENDC}')
                             break
@@ -864,7 +979,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                                 reportDF.report_macAddr['Hostname'] = [
                                     dispositivo['hostname']]
                                 reportDF.report_macAddr['ip'] = [
-                                    ip[0]]
+                                    array_ips[cont][0]]
                                 reportDF.report_macAddr['vlan'] = [
                                     macAddrs[0:macAddrLines[2].find('+')].strip()]
                                 macAddrMarker = macAddrLines[2].find('+')
@@ -886,7 +1001,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                                 reportDF.report_macAddr['Hostname'] = [
                                     dispositivo['hostname']]
                                 reportDF.report_macAddr['ip'] = [
-                                    ip[0]]
+                                    array_ips[cont][0]]
                                 reportDF.report_macAddr['vlan'] = [
                                     macAddrs[macAddrLines[3].index('Vlan'):macAddrLines[3].index('Mac')-1].strip()]
                                 reportDF.report_macAddr['mac address'] = [
@@ -908,7 +1023,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO MacAddr------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -927,14 +1042,14 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                         if (prompt_macCount.__contains__('% Ambiguous command') or prompt_macCount.__contains__('% Invalid input detected at \'^\' marker')):
                             print(f'{bcolors.WARNING}------ERRO MacCount------')
                             print('Comando Invalido')
-                            print(ip[0])
+                            print(array_ips[cont][0])
                             print(device['transport'])
                             print(f'------------------{bcolors.ENDC}')
                             break
                     if not any(letra_macCount.isalpha() for letra_macCount in prompt_macCount):
                         reportDF.report_macCount['Hostname'] = [
                             dispositivo['hostname']]
-                        reportDF.report_macCount['ip'] = [ip[0]]
+                        reportDF.report_macCount['ip'] = [array_ips[cont][0]]
                         coletaDF.dfMacCount = pd.concat(
                             [coletaDF.dfMacCount, reportDF.report_macCount], ignore_index=True)
                         break
@@ -946,7 +1061,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
 
                         reportDF.report_macCount['Hostname'] = [
                             dispositivo['hostname']]
-                        reportDF.report_macCount['ip'] = [ip[0]]
+                        reportDF.report_macCount['ip'] = [array_ips[cont][0]]
                         reportDF.report_macCount['Vlan'] = [
                             re.sub(r"\D+", "", mCount[1])]
                         reportDF.report_macCount['Dynamic Count'] = [
@@ -968,7 +1083,7 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 except Exception as err:
                     print(f'{bcolors.WARNING}------ERRO MacCount------')
                     print(err)
-                    print(ip[0])
+                    print(array_ips[cont][0])
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
@@ -990,12 +1105,12 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 tempo_final = datetime.datetime.now()
                 tempo_delta = tempo_final - tempo_init
                 print(f'{bcolors.OKGREEN}Execução com Sucesso no IP: {bcolors.ENDC}' +
-                      ip[0]+f'{bcolors.OKGREEN} em '+str(tempo_delta.total_seconds())+f' segundos.{bcolors.ENDC}')
+                      array_ips[cont][0]+f'{bcolors.OKGREEN} em '+str(tempo_delta.total_seconds())+f' segundos.{bcolors.ENDC}')
             else:
                 print(
-                    f'{bcolors.FAIL}Falha na requisição de informações devido a conexão instavel no IP: {bcolors.ENDC}'+ip[0])
+                    f'{bcolors.FAIL}Falha na requisição de informações devido a conexão instavel no IP: {bcolors.ENDC}'+array_ips[cont][0])
                 coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
-                    {'ip': [ip[0]], 'falha':['conexão instavel']}, index=None)], ignore_index=True)
+                    {'ip': [array_ips[cont][0]], 'falha':['conexão instavel']}, index=None)], ignore_index=True)
             loopLogin = True
             break
 
@@ -1003,9 +1118,9 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
             device.close()
             if (cont3 == range_secret-1):
                 print(f'{bcolors.FAIL}falha no enable com IP: {bcolors.ENDC}' +
-                      ip[0])
+                      array_ips[cont][0])
                 coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
-                    {'ip': [ip[0]], 'falha':['enable']}, index=None)], ignore_index=True)
+                    {'ip': [array_ips[cont][0]], 'falha':['enable']}, index=None)], ignore_index=True)
                 loopLogin = True
                 break
             else:
@@ -1018,144 +1133,6 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                             print(exception_type)
                             print(f'------------------{bcolors.ENDC}')
     return coletaDF, reportDF
-
-####################################################################################################################
-
-def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF):
-    try:
-
-            reportDF = reports()
-
-            loopLogin = False
-            cont2 = 0
-            bar.text(f'{bcolors.OKBLUE}conectando via {bcolors.HEADER}SSH{bcolors.OKBLUE} a: {bcolors.ENDC}'+ip[0])
-            for cont2 in range(len(array_login)):
-                if (loopLogin):
-                    loopLogin = False
-                    break
-                else:
-                    tempo_init = datetime.datetime.now()
-                    driver = napalm.get_network_driver(ip[1])
-                    device = driver(hostname=ip[0],
-                                    username=array_login[cont2][0],
-                                    password=array_login[cont2][1],
-                                    timeout=120,
-                                    optional_args={'transport': 'ssh',
-                                                "session_log": pastaLogs+'/'+ip[0]+'_SSH'+'.txt',
-                                                'force_no_enable': 'True'})
-
-                    try:
-                        device.open()
-                        coletaDF, reportDF = rodarColeta(tempo_init=tempo_init, cont2=cont2, ip=ip, array_login=array_login,
-                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF)
-                        break
-                    except (netmiko.NetMikoTimeoutException, napalm.base.exceptions.ConnectionException):
-                        print(f'{bcolors.FAIL}falha na conexão via SSH com IP: {bcolors.ENDC}' + ip[0])
-                        coletaDF.dfSemConexao = pd.concat([coletaDF.dfSemConexao, pd.DataFrame(
-                            {'ip': [ip[0]], 'modo': ['SSH']}, index=None)], ignore_index=True)
-                        loopLogin = True
-                        continue
-
-                    except (netmiko.NetMikoAuthenticationException, netmiko.ReadException):
-                        if (cont2 == len(array_login)-1):
-                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
-                                ip[0])
-                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
-                                {'ip': [ip[0]], 'falha':['login']}, index=None)], ignore_index=True)
-                        continue
-
-                    except ConnectionRefusedError:
-                        if (cont2 == len(array_login)-1):
-                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
-                                ip[0])
-                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
-                                {'ip': [ip[0]], 'falha':['recusado - SSH']}, index=None)], ignore_index=True)
-                        continue
-
-                    except TimeoutError:
-                        print(f'{bcolors.FAIL}falha na conexão via SSH com IP: {bcolors.ENDC}' + ip[0])
-                        coletaDF.dfSemConexao = pd.concat([coletaDF.dfSemConexao, pd.DataFrame(
-                            {'ip': [ip[0]], 'modo': ['SSH']}, index=None)], ignore_index=True)
-                        loopLogin = True
-                        continue
-                    
-                    '''except Exception as err:
-                        exception_type = type(err)
-                        print(f'{bcolors.WARNING}------ERRO 3------')
-                        print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')
-'''
-                    device.close()
-
-            loopLogin = False
-            cont2 = 0
-            bar()
-            bar.text(f'{bcolors.OKBLUE}conectando via {bcolors.HEADER}TELNET{bcolors.OKBLUE} a: {bcolors.ENDC}'+ip[0])
-            for cont2 in range(len(array_login)):
-                if (loopLogin):
-                    loopLogin = False
-                    break
-                else:
-                    tempo_init = datetime.datetime.now()
-                    device = driver(hostname=ip[0],
-                                    username=array_login[cont2][0],
-                                    password=array_login[cont2][1],
-                                    timeout=120,
-                                    optional_args={'transport': 'telnet',
-                                                "session_log": pastaLogs+'/'+ip[0]+'_TELNET'+'.txt',
-                                                'force_no_enable': 'True'})
-                    try:
-                        device.open()
-                        coletaDF, reportDF = rodarColeta(tempo_init=tempo_init, cont2=cont2, ip=ip, array_login=array_login,
-                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF)
-                        break
-                    except netmiko.NetmikoAuthenticationException:
-                        if (cont2 == len(array_login)-1):
-                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
-                                ip[0])
-                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
-                                {'ip': [ip[0]], 'falha':['login']}, index=None)], ignore_index=True)
-                        continue
-
-                    except ConnectionRefusedError:
-                        if (cont2 == len(array_login)-1):
-                            print(f'{bcolors.FAIL}falha no login com IP: {bcolors.ENDC}' +
-                                ip[0])
-                            coletaDF.dfSemLogin = pd.concat([coletaDF.dfSemLogin, pd.DataFrame(  # salvando informações de falha de login
-                                {'ip': [ip[0]], 'falha':['recusado - TELNET']}, index=None)], ignore_index=True)
-                        continue
-
-                    except (netmiko.NetMikoTimeoutException, netmiko.ReadTimeout, napalm.base.exceptions.ConnectionException):
-                        loopLogin = True
-                        break
-
-                    except TimeoutError:
-                        print(f'{bcolors.FAIL}falha na conexão via TELNET com IP: {bcolors.ENDC}' + ip[0])
-                        coletaDF.dfSemConexao = pd.concat([coletaDF.dfSemConexao, pd.DataFrame(
-                            {'ip': [ip[0]],'modo':['TELNET']}, index=None)], ignore_index=True)
-                        loopLogin = True
-                        break
-
-                    '''except Exception as err:
-                        exception_type = type(err).__name__
-                        print(f'{bcolors.WARNING}------ERRO 2------')
-                        print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')'''
-
-            if os.path.getsize(pastaLogs+'/'+ip[0]+'_SSH'+'.txt') == 0:
-                os.remove(pastaLogs+'/'+ip[0]+'_SSH'+'.txt')
-            if os.path.getsize(pastaLogs+'/'+ip[0]+'_TELNET'+'.txt') == 0:
-                os.remove(pastaLogs+'/'+ip[0]+'_TELNET'+'.txt')
-            bar()
-
-    except TimeoutError:
-        print('blabla')
-    '''except Exception as err:
-                        exception_type = type(err).__name__
-                        print(f'{bcolors.WARNING}------ERRO 2------')
-                        print(exception_type)
-                        print(f'------------------{bcolors.ENDC}')'''
-
 
 
 autoColetaVita()
