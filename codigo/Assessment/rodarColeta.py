@@ -19,7 +19,7 @@ from DadosColeta.swtInterfaces import swtInterfaces
 from DadosColeta.vlan import vlan
 from DadosColeta.vtp import vtp
 
-def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos, modo_config, device, reportDF, coletaDF):
+def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos, modo_config, device, reportDF, coletaDF,loopLogin):
     if (len(array_secret)) > 1:
         range_secret = len(array_secret)
     else:
@@ -114,4 +114,4 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                             print(f'{bcolors.WARNING}------ERRO 5------')
                             print(exception_type)
                             print(f'------------------{bcolors.ENDC}')
-    return coletaDF, reportDF
+    return coletaDF, reportDF, loopLogin

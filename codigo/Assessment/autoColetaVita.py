@@ -15,7 +15,7 @@ def autoColeta():
     '''Vinicius Conti Sardinha
         Vivo Vita IT'''
 
-    versao_atual = 0.4
+    versao_atual = 0.41
 
     response = requests.get(
         "https://api.github.com/repos/VitaAssessment/AutoAssessment/releases/latest")
