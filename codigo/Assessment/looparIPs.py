@@ -32,8 +32,8 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
 
                     try:
                         device.open()
-                        coletaDF, reportDF = rodarColeta(tempo_init=tempo_init, cont2=cont2, ip=ip, array_login=array_login,
-                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF)
+                        coletaDF, reportDF,loopLogin = rodarColeta(tempo_init=tempo_init, cont2=cont2, ip=ip, array_login=array_login,
+                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF,loopLogin=loopLogin)
                         break
                     except (netmiko.NetMikoTimeoutException, napalm.base.exceptions.ConnectionException):
                         print(f'{bcolors.FAIL}falha na conexão via SSH com IP: {bcolors.ENDC}' + ip[0])
@@ -95,8 +95,8 @@ def looparIPs (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,arr
                                                 'force_no_enable': 'True'})
                     try:
                         device.open()
-                        coletaDF, reportDF = rodarColeta(tempo_init=tempo_init, cont2=cont2, ip=ip, array_login=array_login,
-                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF)
+                        coletaDF, reportDF,loopLogin = rodarColeta(tempo_init=tempo_init, cont2=cont2, ip=ip, array_login=array_login,
+                                                        array_secret=array_secret, modo_config=modo_config, array_comandos=array_comandos, device=device, coletaDF=coletaDF, reportDF=reportDF,loopLogin=loopLogin)
                         break
                     except netmiko.NetmikoAuthenticationException:
                         if (cont2 == len(array_login)-1):
