@@ -19,56 +19,75 @@ from DadosColeta.swtInterfaces import swtInterfaces
 from DadosColeta.vlan import vlan
 from DadosColeta.vtp import vtp
 
-def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos, modo_config, device, reportDF, coletaDF,loopLogin):
+# script central para a coleta de dados dentro do device
+
+
+def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos, modo_config, device, reportDF, coletaDF, loopLogin):
+    # garantindo que rode mesmo que não tenha nenhum enable secret
     if (len(array_secret)) > 1:
         range_secret = len(array_secret)
     else:
         range_secret = 1
     cont3 = 0
+
     for cont3 in range(range_secret):
         try:
+            # iniciando device e inserindo secret
             device.open()
             device._netmiko_device.secret = str(array_secret[cont3][0])
-            #device._netmiko_device.global_delay_factor = 4
+
+            # iniciando enable caso não esteja
             if not (device._netmiko_device.check_enable_mode()):
                 device._netmiko_device.enable()
 
+            # pegando informações basicas
             dispositivo = device.get_facts()
 
         #relacaoLogin = ['ip','username','password','secret','privilege','modo','nome','modelo','serial','IOS']
-            coletaDF.dfRelacaoLogin, contError = relacaoLogin(coletaDF,reportDF,ip,array_login[cont2],device,array_secret[cont3],dispositivo)
+            coletaDF.dfRelacaoLogin, contError = relacaoLogin(
+                coletaDF, reportDF, ip, array_login[cont2], device, array_secret[cont3], dispositivo)
 
         #showVersion = ['Hostname','ip','modelo','serial','IOS','Rom','uptime','license Level','Configuration Register']
-            coletaDF.dfShowVersion, contError = showVersion(reportDF,dispositivo,ip,device,coletaDF)
-            
+            coletaDF.dfShowVersion, contError = showVersion(
+                reportDF, dispositivo, ip, device, coletaDF)
+
         #swtCDP = ['Hostname','ip','Neighbor','Local Interface','Holdtime','Capabilities','Platform','IP Neig','Port ID','Software','Versao','Release']
-            coletaDF.dfSwtCDP, contError = swtCDP(device,reportDF,dispositivo,coletaDF,ip)
-            
+            coletaDF.dfSwtCDP, contError = swtCDP(
+                device, reportDF, dispositivo, coletaDF, ip)
+
         #vtp = ['Hostname','ip','vtp Capable','vtp Running','vtp mode','domain name']
-            coletaDF.dfVTP, contError = vtp(reportDF,dispositivo,device,coletaDF,ip)
-            
+            coletaDF.dfVTP, contError = vtp(
+                reportDF, dispositivo, device, coletaDF, ip)
+
         #showInventory   = ['Hostname','ip','NAME','DESC','PID','VID','SN']
-            coletaDF.dfShowInventory, contError = showInventory(device,reportDF,dispositivo,ip,coletaDF)
-            
+            coletaDF.dfShowInventory, contError = showInventory(
+                device, reportDF, dispositivo, ip, coletaDF)
+
         #swtInterfaces   = ['Hostname','ip','Port','Name','Status','Vlan','Duplex','Speed','Type']
-            coletaDF.dfSwtInterfaces, contError = swtInterfaces(device,ip,reportDF,dispositivo,coletaDF)
+            coletaDF.dfSwtInterfaces, contError = swtInterfaces(
+                device, ip, reportDF, dispositivo, coletaDF)
 
         #interfaceBrief  = ['Hostname','ip','Interface','IP-Address','OK?','Method','Status','Protocol']
-            coletaDF.dfInterfaceBrief, contError = interfaceBrief(device,ip,reportDF,dispositivo,coletaDF)
+            coletaDF.dfInterfaceBrief, contError = interfaceBrief(
+                device, ip, reportDF, dispositivo, coletaDF)
 
         #vlan            = ['Hostname','ip','Vlan ID','Vlan Name','Status','Ports']
-            coletaDF.dfVlan, contError = vlan(device,reportDF,coletaDF,dispositivo,ip)
+            coletaDF.dfVlan, contError = vlan(
+                device, reportDF, coletaDF, dispositivo, ip)
 
         #ipARP           = ['Hostname','ip','Protocol','Address','Age','Hardware Addr','Type','Interface']
-            coletaDF.dfIpARP, contError = ipARP(device,ip,reportDF,dispositivo,coletaDF)
+            coletaDF.dfIpARP, contError = ipARP(
+                device, ip, reportDF, dispositivo, coletaDF)
 
         #macAddr         = ['Hostname','ip','vlan','mac address','Type','protocols','port']
-            coletaDF.dfMacAddr, contError = macAddr(device,ip,reportDF,dispositivo,coletaDF)
+            coletaDF.dfMacAddr, contError = macAddr(
+                device, ip, reportDF, dispositivo, coletaDF)
 
         #MacCount        = ['Hostname','ip','Vlan','Dynamic Count','Statis Count','Total']
-            coletaDF.dfMacCount, contError = MacCount(device,ip,reportDF,dispositivo,coletaDF)
+            coletaDF.dfMacCount, contError = MacCount(
+                device, ip, reportDF, dispositivo, coletaDF)
     #################################################################################################################################
-                # convertendo array bidimensional em array de string
+            # convertendo array bidimensional em array de string
             if (modo_config):
                 array_comandos2 = [None]*len(array_comandos)
                 for cont4 in range(len(array_comandos)):
@@ -106,12 +125,12 @@ def rodarColeta(tempo_init, cont2, ip, array_login, array_secret, array_comandos
                 loopLogin = True
             continue
 
-        #except UnboundLocalError:
-        #    print('')
+        except UnboundLocalError:
+            print('')
 
         except Exception as err:
-                            exception_type = type(err)
-                            print(f'{bcolors.WARNING}------ERRO 5------')
-                            print(exception_type)
-                            print(f'------------------{bcolors.ENDC}')
+            exception_type = type(err)
+            print(f'{bcolors.WARNING}------ERRO 5------')
+            print(exception_type)
+            print(f'------------------{bcolors.ENDC}')
     return coletaDF, reportDF, loopLogin

@@ -9,7 +9,7 @@ def relacaoLogin(coletaDF, reportDF, ip, login, device, secret, dispositivo):
     contRela = 0
     while contRela == 0 and contError < 3:
         try:
-            #device._netmiko_device.send_command("terminal history")
+
             reportDF.report_relacaoLogin['ip'] = [ip[0]]
             reportDF.report_relacaoLogin['username'] = [
                 login[0]]
@@ -37,7 +37,7 @@ def relacaoLogin(coletaDF, reportDF, ip, login, device, secret, dispositivo):
 
             coletaDF.dfRelacaoLogin = pd.concat(
                 [coletaDF.dfRelacaoLogin, reportDF.report_relacaoLogin], ignore_index=True)
-            # device.close()
+
             contRela = 1
             break
         except (netmiko.ReadTimeout):

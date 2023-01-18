@@ -19,7 +19,7 @@ def ipARP(device, ip, reportDF, dispositivo, coletaDF):
                 print(device['transport'])
                 print(f'------------------{bcolors.ENDC}')
                 break
-            # print(prompt_ipARP)
+
             ipARPLines = prompt_ipARP.split('\n')
             for ipARPs in ipARPLines:
 

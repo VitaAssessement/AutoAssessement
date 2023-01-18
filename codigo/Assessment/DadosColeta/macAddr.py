@@ -10,8 +10,7 @@ def macAddr(device, ip, reportDF, dispositivo, coletaDF):
     contRela = 0
     while contRela == 0 and contError < 3:
         try:
-            #report_['Hostname'] = [dispositivo['hostname']]
-            #report_['ip'] = [ip[0]]
+
             prompt_macAddr = device._netmiko_device.send_command(
                 'show mac address-table', read_timeout=30)
             if (prompt_macAddr.__contains__('% Ambiguous command') or prompt_macAddr.__contains__('% Invalid input detected at \'^\' marker')):
@@ -24,7 +23,7 @@ def macAddr(device, ip, reportDF, dispositivo, coletaDF):
                     print(device['transport'])
                     print(f'------------------{bcolors.ENDC}')
                     break
-            # print(prompt_macAddr)
+
             macAddrLines = prompt_macAddr.split('\n')
             if macAddrLines[0] == '':
                 del macAddrLines[0]
@@ -69,8 +68,6 @@ def macAddr(device, ip, reportDF, dispositivo, coletaDF):
                 coletaDF.dfMacAddr = pd.concat(
                     [coletaDF.dfMacAddr, reportDF.report_macAddr], ignore_index=True)
 
-            # device.close()
-            #df = pd.concat([df, report_], ignore_index=True)
             contRela = 1
             break
         except (netmiko.ReadTimeout):

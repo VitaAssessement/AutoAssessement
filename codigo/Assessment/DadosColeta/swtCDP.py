@@ -73,7 +73,6 @@ def swtCDP(device, reportDF, dispositivo, coletaDF, ip):
                     [coletaDF.dfSwtCDP, reportDF.report_swtCDP], ignore_index=True)
                 reportDF.report_swtCDP = pd.DataFrame(index=None)
 
-            # device.close()
             contRela = 1
             break
         except (netmiko.ReadTimeout):

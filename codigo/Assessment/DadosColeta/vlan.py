@@ -9,8 +9,6 @@ def vlan(device, reportDF, coletaDF, dispositivo, ip):
     contRela = 0
     while contRela == 0 and contError < 3:
         try:
-            #report_['Hostname'] = [dispositivo['hostname']]
-            #report_['ip'] = [ip[0]]
 
             prompt_vlans = device._netmiko_device.send_command(
                 'show vlan', read_timeout=30)
@@ -34,10 +32,6 @@ def vlan(device, reportDF, coletaDF, dispositivo, ip):
                     [coletaDF.dfVlan, reportDF.report_vlan], ignore_index=True)
                 break
             vlanLines = prompt_vlans.split('\n')
-
-            # for vcont in range(len(vlanLines)):
-            #    print(vlanLines[vcont])
-            #    print('-------')
 
             vlanN = ''
             vlanName = ''
