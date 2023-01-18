@@ -29,7 +29,7 @@ def MacCount(device, ip, reportDF, dispositivo, coletaDF):
                 coletaDF.dfMacCount = pd.concat(
                     [coletaDF.dfMacCount, reportDF.report_macCount], ignore_index=True)
                 break
-            # print(prompt_macCount)
+
             macCountSect = prompt_macCount.split('(Mac Entries)')
 
             for macCountCont in range(len(macCountSect)):
@@ -48,8 +48,6 @@ def MacCount(device, ip, reportDF, dispositivo, coletaDF):
                     re.sub(r"\D+", "", mCount[5])]
                 coletaDF.dfMacCount = pd.concat(
                     [coletaDF.dfMacCount, reportDF.report_macCount], ignore_index=True)
-
-            # device.close()
 
             contRela = 1
             break

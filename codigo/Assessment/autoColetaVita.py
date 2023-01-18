@@ -9,7 +9,8 @@ from selecSheet import selecSheet
 from looparIPs import looparIPs
 from escribaExcel import escribaExcel
 
-pool_size = 5 #quantidade de processamentos simultaneos no multithread
+pool_size = 5  # quantidade de processamentos simultaneos no multithread
+
 
 def autoColeta():
     '''Vinicius Conti Sardinha
@@ -63,7 +64,7 @@ def autoColeta():
             self.dfMacCount = dfMacCount if dfMacCount is not None else pd.DataFrame([
             ], index=None)
             self.dfSemConexao = dfSemConexao if dfSemConexao is not None else pd.DataFrame(
-                [], columns=['ip','modo'], index=None)
+                [], columns=['ip', 'modo'], index=None)
             self.dfSemLogin = dfSemLogin if dfSemLogin is not None else pd.DataFrame(
                 [], columns=['ip', 'falha'], index=None)
 
@@ -171,26 +172,30 @@ def autoColeta():
 
     print(f'{bcolors.BOLD}{bcolors.HEADER}iniciando assessment...{bcolors.ENDC}')
     cont = 0
-    with alive_bar(len(array_ips)*2, force_tty=True,title=f'{bcolors.HEADER}{bcolors.BOLD}Assessment{bcolors.ENDC}',
-elapsed=' em {elapsed}',enrich_print=False,dual_line=True,
-elapsed_end=f'{bcolors.OKGREEN} execução finalizada em '+'{elapsed}'+f'{bcolors.ENDC}') as bar:
-        
+    with alive_bar(len(array_ips)*2, force_tty=True, title=f'{bcolors.HEADER}{bcolors.BOLD}Assessment{bcolors.ENDC}',
+                   elapsed=' em {elapsed}', enrich_print=False, dual_line=True,
+                   elapsed_end=f'{bcolors.OKGREEN} execução finalizada em '+'{elapsed}'+f'{bcolors.ENDC}') as bar:
+
         pool = Pool(pool_size)
 
+        # iniciando loop de ips multithread (para debug comenta as linhas de pool e descomenta a linha comentada, multithread buga as msgs de erro normais)
         for ip in array_ips:
-            pool.apply_async(looparIPs, (ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF))
-            #looparIPs(ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF)
+            pool.apply_async(looparIPs, (ip, reports, bar, array_login,
+                             pastaLogs, array_secret, modo_config, array_comandos, coletaDF))
+            # looparIPs(ip,reports,bar,array_login,pastaLogs,array_secret,modo_config,array_comandos,coletaDF)
         pool.close()
         pool.join()
 #################################################################################################################################
 
     try:
-        print(f'\n{bcolors.HEADER}selecione onde salvar a relação de logins{bcolors.ENDC}')
+        print(
+            f'\n{bcolors.HEADER}selecione onde salvar a relação de logins{bcolors.ENDC}')
         file_name = filedialog.asksaveasfilename(  # salvando arquivo de resultados
             filetypes=[('excel file', '*.xlsx')], defaultextension='.xlsx')
         if (file_name == ''):
             return
 
+        # salvando dados coletados
         with pd.ExcelWriter(file_name) as writer:
             escribaExcel(writer, 'Relação Logins', coletaDF.dfRelacaoLogin)
             escribaExcel(writer, 'Show Version', coletaDF.dfShowVersion)

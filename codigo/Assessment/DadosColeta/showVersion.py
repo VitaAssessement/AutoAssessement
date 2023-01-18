@@ -48,7 +48,6 @@ def showVersion(reportDF, dispositivo, ip, device, coletaDF):
                     reportDF.report_showVersion['Configuration Register'] = [
                         confReg]
 
-            # device.close()
             coletaDF.dfShowVersion = pd.concat(
                 [coletaDF.dfShowVersion, reportDF.report_showVersion], ignore_index=True)
             contRela = 1

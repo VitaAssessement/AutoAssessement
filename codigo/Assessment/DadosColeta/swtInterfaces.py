@@ -51,7 +51,6 @@ def swtInterfaces(device, ip, reportDF, dispositivo, coletaDF):
 
                 coletaDF.dfSwtInterfaces = pd.concat(
                     [coletaDF.dfSwtInterfaces, reportDF.report_swtInterfaces], ignore_index=True)
-            # device.close()
 
             contRela = 1
             break
