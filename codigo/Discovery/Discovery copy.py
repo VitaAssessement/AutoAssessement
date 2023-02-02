@@ -2,38 +2,138 @@ import pandas as pd
 from tkinter import filedialog
 import networkx as nx
 import matplotlib.pyplot as plt
-from bokeh.plotting import figure, curdoc, from_networkx
-from bokeh.models import HoverTool
-from bokeh.io import output_notebook, show, save
+import PIL
+import numpy as np
 
-def nudge(pos, x_shift, y_shift):
-    return {n:(x + x_shift, y + y_shift) for n,(x,y) in pos.items()}
+def CriaRede(deviceID,excel):
 
-G = nx.Graph()
-xl = pd.ExcelFile("D:\\User\\Desktop\\vita\\template-coleta.xlsx")
+    icons = {
+    "router": "D:/User/Desktop/vita/icons/router.png",
+    "switch": "D:/User/Desktop/vita/icons/switch.png",
+    "host": "D:/User/Desktop/vita/icons/host.png",
+    }
 
-swt_cdp = xl.parse('swt_cdp', header=0).to_numpy()
-attrs = {}
+    # Load images
+    images = {k: PIL.Image.open(fname) for k, fname in icons.items()}
 
-for i in range(len(swt_cdp)):
+    G = nx.Graph()
+    xl = pd.ExcelFile(excel)
 
-    G.add_edge(swt_cdp[i][1],swt_cdp[i][7],Local_Interface=swt_cdp[i][3],Neighbor_Interface=swt_cdp[i][8])
-    attrs[swt_cdp[i][1]] = {'Hostname':swt_cdp[i][0],'Capabilities':swt_cdp[i][5]}
+    swt_cdp = xl.parse('Sheet1', header=0).to_numpy()
 
-nx.set_node_attributes(G, attrs)
+    xl.close()
+    attrs = {}
+    noUpdate = False
+    while not noUpdate:
+        noUpdate = True
+        for i in range(len(swt_cdp)):
+            
+            if any(device in swt_cdp[i][0] for device in deviceID ):
+                G.add_edge(swt_cdp[i][0],swt_cdp[i][3]
+                        ,Label=swt_cdp[i][2].replace('Gigabit','Gi').replace('Ethernet','Eth')+'  -  '+swt_cdp[i][4].replace('Gigabit','Gi').replace('Ethernet','Eth')
+                        )
+                attrs[swt_cdp[i][0]] = {'IP':swt_cdp[i][1],'Capabilities':'Switch'}
+                
+                if not any (neigh in swt_cdp[i][3] for neigh in deviceID):
+                    deviceID = deviceID+[swt_cdp[i][3]]
+                    noUpdate = False
+                    
+            if any(device in swt_cdp[i][3] for device in deviceID ):
+                G.add_edge(swt_cdp[i][0],swt_cdp[i][3]
+                        ,Label=swt_cdp[i][2].replace('Gigabit','Gi').replace('Ethernet','Eth')+'  -  '+swt_cdp[i][4].replace('Gigabit','Gi').replace('Ethernet','Eth')
+                        )
+                
+                if not any (neigh in swt_cdp[i][0] for neigh in deviceID):
+                    deviceID = deviceID+[swt_cdp[i][0]]
+                    noUpdate = False
 
-pos = nx.spring_layout(G)
+        nx.set_node_attributes(G, attrs)
 
-graph_renderer = from_networkx(G,nx.spring_layout(G))
-TOOLTIPS=[("Hostname", "@Hostname"), ("Capabilities", "@Capabilities")]
-plot = figure(tooltips = TOOLTIPS,x_range=(1,4), y_range=(0,3),
-tools="lasso_select,pan,wheel_zoom")
+        for node in G.nodes.data():
+            if not(len(node[1]) <= 0 or node[1] == {}):
+                if ('Capabilities' in node[1]):
+                    if (str(node[1]['Capabilities']).__contains__('Switch')):
+                        G.add_node(node[0],image=images['switch'])
+                    elif (str(node[1]['Capabilities']).__contains__('Router')):
+                        G.add_node(node[0],image=images['router'])
+                    else:
+                        G.add_node(node[0],image=images['host'])
+                else:
+                    G.add_node(node[0],image=images['host'])
+            else:
+                G.add_node(node[0],image=images['host'])
 
-hover_edges = HoverTool(
-tooltips=[('Local Interface','@Local_Interface'),('Neighbor Interface','@Neighbor_Interface')],
-renderers=[graph_renderer.edge_renderer], line_policy="interp"
-)
+    fig, ax = plt.subplots()
+    pos = nx.spring_layout(G, k=0.5, iterations=100)
+    nodes = nx.draw_networkx_nodes(G, pos=pos, ax=ax,node_size=1500,node_color='white')
+    nx.draw_networkx_edges(G, pos=pos, ax=ax)
 
-plot.renderers.append(graph_renderer)
-plot.add_tools(hover_edges)
-show(plot)
+    nx.draw_networkx_edge_labels(G, pos,edge_labels={edge[0:2]:edge[2]['Label'] for edge in G.edges.data()},font_color='blue', rotate=False,font_size=8)
+
+    annot = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
+                        bbox=dict(boxstyle="round", fc="w"),
+                        arrowprops=dict(arrowstyle="->"))
+    annot.set_visible(False)
+
+    idx_to_node_dict = {}
+    for idx, node in enumerate(G.nodes):
+        idx_to_node_dict[idx] = node
+
+    def update_annot(ind):
+        node_idx = ind["ind"][0]
+        node = idx_to_node_dict[node_idx]
+        xy = pos[node]
+        annot.xy = xy
+        node_attr = {'node': node}
+        node_attr.update(G.nodes[node])
+        text = '\n'.join(f'{k}: {v}' for k, v in node_attr.items())
+        text = text[0:text.index('image')-1].replace('node','Hostname')
+        annot.set_text(text)
+
+    def hover(event):
+        vis = annot.get_visible()
+        if event.inaxes == ax:
+            cont, ind = nodes.contains(event)
+            if cont:
+                update_annot(ind)
+                annot.set_visible(True)
+                fig.canvas.draw_idle()
+            else:
+                if vis:
+                    annot.set_visible(False)
+                    fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect("motion_notify_event", hover)
+
+    # Transform from data coordinates (scaled between xlim and ylim) to display coordinates
+    tr_figure = ax.transData.transform
+    # Transform from display to figure coordinates
+    tr_axes = fig.transFigure.inverted().transform
+
+    # Select the size of the image (relative to the X axis)
+    icon_size = (ax.get_xlim()[1] - ax.get_xlim()[0]) * 0.025
+    icon_center = icon_size / 2.0
+
+    # Add the respective image to each node
+    for n in G.nodes:
+        xf, yf = tr_figure(pos[n])
+        xa, ya = tr_axes((xf, yf))
+        # get overlapped axes and plot icon
+        a = plt.axes([xa - icon_center, ya - icon_center, icon_size, icon_size])
+        a.imshow(G.nodes[n]["image"])
+        a.axis("off")
+
+    plt.show()
+    
+deviceID = ['BR-SP-FAB-JAC-SWA_ALX_AMZ.194.19']
+excel = "D:\\User\\Desktop\\vita\\[Coleta LLDP Suzano]_2023-01-30.xlsx"
+
+#BR-MS-FAB-TSL-SWA_AMX.3.232
+#BR-SP-FAB-JAC_AP_AMBU.140
+#BR-MS-TLS-FAB-AP-ALMOX.17.0.150
+#BR-SP-FAB-JAC-SWA_AMB.194.15
+#BR-SP-FAB-JAC_AP_REFEITORI.100
+
+
+CriaRede(deviceID,excel)
+

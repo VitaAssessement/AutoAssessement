@@ -104,9 +104,9 @@ def autoColetaVita():
 
 #################################################################################################################################
 
-    print(f'{bcolors.BOLD}{bcolors.HEADER}iniciando assessment...{bcolors.ENDC}')
+    print(f'{bcolors.BOLD}{bcolors.HEADER}iniciando discovery...{bcolors.ENDC}')
     cont = 0
-    with alive_bar(len(array_ips)*2, force_tty=True,title=f'{bcolors.HEADER}{bcolors.BOLD}Assessment{bcolors.ENDC}',
+    with alive_bar(len(array_ips)*2, force_tty=True,title=f'{bcolors.HEADER}{bcolors.BOLD}Discovery{bcolors.ENDC}',
 elapsed=' em {elapsed}',enrich_print=False,dual_line=True,
 elapsed_end=f'{bcolors.OKGREEN} execução finalizada em '+'{elapsed}'+f'{bcolors.ENDC}') as bar:
         while cont < len(array_ips):
