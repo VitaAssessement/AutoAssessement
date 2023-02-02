@@ -18,8 +18,6 @@ def interfaceBrief(device, ip, reportDF, dispositivo, coletaDF):
                 print(device['transport'])
                 print(f'------------------{bcolors.ENDC}')
                 break
-            # print('prompt_interfaceBrief')
-            # print([prompt_interfaceBrief])
 
             interfaceBriefLines = prompt_interfaceBrief.split('\n')
             for interfaceBriefs in interfaceBriefLines:
@@ -44,7 +42,6 @@ def interfaceBrief(device, ip, reportDF, dispositivo, coletaDF):
 
                 coletaDF.dfInterfaceBrief = pd.concat(
                     [coletaDF.dfInterfaceBrief, reportDF.report_interfaceBrief], ignore_index=True)
-            # device.close()
 
             contRela = 1
             break

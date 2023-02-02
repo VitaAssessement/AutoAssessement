@@ -1,7 +1,13 @@
 from cores import bcolors
 import PySimpleGUI as sg
 
-def selecSheet(texto, xl, cabecalho):  # função de escolher sheet, pra economizar linhas
+'''
+cria uma janela com uma lista dinamica e retorna um dos valores dessa lista
+'''
+
+
+# recebe o texto, o arquivo excel de escolha e o cabeçalho do prompt
+def selecSheet(texto, xl, cabecalho):
     try:
         event, values = sg.Window(texto, [[sg.Text(texto), sg.Listbox(xl.sheet_names, size=(20, 3), key='LB')],
                                           [sg.Button('Ok'), sg.Button('Cancelar')]]).read(close=True)

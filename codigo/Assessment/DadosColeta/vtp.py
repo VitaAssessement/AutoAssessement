@@ -22,7 +22,7 @@ def vtp(reportDF, dispositivo, device, coletaDF, ip):
                 print(device['transport'])
                 print(f'------------------{bcolors.ENDC}')
                 break
-            # print(prompt_vtp)
+
             vtp_status = prompt_vtp.split('\n')
             for vtp_line in vtp_status:
                 if vtp_line.__contains__('capable'):
@@ -38,7 +38,6 @@ def vtp(reportDF, dispositivo, device, coletaDF, ip):
                     reportDF.report_vtp['domain name'] = [
                         vtp_line.split(':')[1].removeprefix(' ')]
 
-            # device.close()
             coletaDF.dfVTP = pd.concat(
                 [coletaDF.dfVTP, reportDF.report_vtp], ignore_index=True)
             contRela = 1
